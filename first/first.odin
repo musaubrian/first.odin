@@ -13,6 +13,7 @@ Command :: struct {
 }
 
 WORK_DIR :: "."
+DEFAULT_TAG :: "v0.0.0-debug"
 
 usage :: proc() {
 	fmt.printfln(
@@ -63,8 +64,7 @@ main :: proc() {
 			working_dir = WORK_DIR,
 		},
 	)
-	default_tag := "v0.0.0-debug"
-	if !tag_state.success {fmt.eprintln("[WARN]: No tags found using default ", default_tag); tag = default_tag}
+	if !tag_state.success {fmt.eprintln("[WARN] No tags found using default ", DEFAULT_TAG); tag = DEFAULT_TAG}
 
 	hash_opt := fmt.aprintf("-define:COMMIT=%s", strings.trim_right(commit_hash, "\n"))
 	tag_opt := fmt.aprintf("-define:TAG=%s", strings.trim_right(tag, "\n"))
