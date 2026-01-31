@@ -93,7 +93,7 @@ run_command :: proc(
 		command     = cmd.args,
 	}
 
-	fmt.printfln("[CMD] %s", strings.join(cmd.args, " "))
+	fmt.printfln("[INFO] CMD: %s", strings.join(cmd.args, " "))
 	process_state, stdout, stderr, process_err := os2.process_exec(process_desc, context.allocator)
 	if process_err != nil {
 		return os2.Process_State{success = false}, "", os2.error_string(process_err)
@@ -121,14 +121,23 @@ rebuild :: proc() {
 	diff := time.diff(bin_modified_time, bin_src_modified_time)
 	if diff < 0 {return}
 
-	fmt.println("[FIRST] src changed, rebuilding...")
+	old_bin := fmt.aprintf("%s.old", os.args[0])
+	rename_err := os2.rename(os.args[0], old_bin)
+	if rename_err != nil {fatal("Failed to rename binary")}
+	fmt.println("[INFO] renamed first.bin -> first.bin.old")
+
 	rebuild_state, rebuild_out, rebuild_err := run_command(
 		Command {
 			args = []string{"odin", "build", "first", "-out:first.bin"},
 			working_dir = WORK_DIR,
 		},
 	)
-	if !rebuild_state.success {fatal(rebuild_err)}
+	if !rebuild_state.success {
+		_ = os2.rename(old_bin, os.args[0])
+		fmt.eprintln("[ERROR] rebuild failed reverting first.bin.old -> first.bin")
+		fatal(rebuild_err)
+	}
+
 	// run ourself again as a subprocess
 	rerun_cmds := [dynamic]string{"first.bin"}
 	for old_arg in os.args[1:] {append(&rerun_cmds, old_arg)}
