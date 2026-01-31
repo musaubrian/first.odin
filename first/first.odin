@@ -33,7 +33,7 @@ Usage: %s
 
 
 main :: proc() {
-	DEFAULT_BUILD_ARGS := []string{"-vet", "-vet-style"}
+	DEFAULT_BUILD_ARGS := []string{"-vet", "-vet-style", "-warnings-as-errors"}
 	rebuild()
 
 	show_timings := false
@@ -130,7 +130,6 @@ rebuild :: proc() {
 	)
 	if !rebuild_state.success {fatal(rebuild_err)}
 	// run ourself again as a subprocess
-	// should probably find sth like execvp
 	rerun_cmds := [dynamic]string{"first.bin"}
 	for old_arg in os.args[1:] {append(&rerun_cmds, old_arg)}
 	rerun_state, rerun_out, rerun_err := run_command(
