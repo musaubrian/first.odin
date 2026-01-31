@@ -152,7 +152,7 @@ rebuild :: proc() {
 
 
 fatal :: proc(message: string) {
-	fmt.eprintln("[ERROR]: ", message)
+	fmt.eprintln(message)
 	os.exit(1)
 }
 

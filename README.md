@@ -29,5 +29,5 @@ odin build first/ -out:first.bin
 ./first.bin
 ```
 
-It will auto-rebuild itself if you change the source using  *Go Rebuild Urself™ Technology*
+It will auto-rebuild itself if you change the source using  **Go Rebuild Urself™ Technology**
 \*borrowed from nob
