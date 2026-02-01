@@ -36,4 +36,5 @@ Example:
 
 [https://github.com/musaubrian/sprite-anim](https://github.com/musaubrian/sprite-anim)
 
+[![Demo](./.media/first.odin.mp4)]
 <video src="./.media/first.odin.mp4" controls></video>
