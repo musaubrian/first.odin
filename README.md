@@ -31,3 +31,7 @@ odin build first/ -out:first.bin
 
 It will auto-rebuild itself if you change the source using  **Go Rebuild Urself™ Technology**
 \*borrowed from nob
+
+Example:
+
+[https://github.com/musaubrian/sprite-anim](https://github.com/musaubrian/sprite-anim)
