@@ -66,7 +66,7 @@ main :: proc() {
 	)
 	if !tag_state.success {fmt.eprintln("[WARN] No tags found using default ", DEFAULT_TAG); tag = DEFAULT_TAG}
 
-	hash_opt := fmt.aprintf("-define:COMMIT=%s", strings.trim_right(commit_hash, "\n"))
+	hash_opt := fmt.aprintf("-define:COMMIT_HASH=%s", strings.trim_right(commit_hash, "\n"))
 	tag_opt := fmt.aprintf("-define:TAG=%s", strings.trim_right(tag, "\n"))
 
 	build_args := [dynamic]string{"odin", "build", WORK_DIR, hash_opt, tag_opt}
@@ -76,6 +76,8 @@ main :: proc() {
 
 	build_state, _, build_err := run_command(Command{args = build_args[:]})
 	if !build_state.success {fatal(build_err)}
+	if build_err != "" {fmt.eprintln(build_err)}
+
 
 }
 
