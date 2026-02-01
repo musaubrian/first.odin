@@ -35,3 +35,5 @@ It will auto-rebuild itself if you change the source using  **Go Rebuild Urselfâ
 Example:
 
 [https://github.com/musaubrian/sprite-anim](https://github.com/musaubrian/sprite-anim)
+
+<video src="./.media/first.odin.mp4" controls></video>
