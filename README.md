@@ -14,7 +14,7 @@ Since its just odin, it can take advantage of the entire language.
 ```
 .
 ├── first
-│   └── first.odin
+│   └── main.odin
 └── your_code.odin
 ...
 ```
