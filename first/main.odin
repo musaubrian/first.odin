@@ -10,10 +10,11 @@ import "core:time"
 Command :: struct {
 	args:        []string,
 	working_dir: string,
+	silent:      bool,
 }
 
 WORK_DIR :: "."
-DEFAULT_TAG :: "v0.0.0-debug"
+DEFAULT_BUILD_ARGS := []string{"-vet", "-vet-style", "-warnings-as-errors"}
 
 usage :: proc() {
 	fmt.printfln(
@@ -22,7 +23,7 @@ usage :: proc() {
 Usage: %s
 
    timings  Show build timings (adds -show-timings to build args)
-   release  Build odin with the speed optimizations (-o:speed)
+   release  Build odin with optimizations (-o:speed...)
    help     Prints this help message
         `,
 		os.args[0],
@@ -33,8 +34,8 @@ Usage: %s
 
 
 main :: proc() {
-	DEFAULT_BUILD_ARGS := []string{"-vet", "-vet-style", "-warnings-as-errors"}
 	rebuild()
+	version := get_version()
 
 	show_timings := false
 	release_mode := false
@@ -53,26 +54,16 @@ main :: proc() {
 		}
 	}
 
-	commit_state, commit_hash, c_err_msg := run_command(
-		Command{args = []string{"git", "rev-parse", "--verify", "HEAD"}, working_dir = WORK_DIR},
-	)
-	if !commit_state.success {fatal(c_err_msg)}
 
-	tag_state, tag, _ := run_command(
-		Command {
-			args = []string{"git", "describe", "--tags", "--abbrev=0"},
-			working_dir = WORK_DIR,
-		},
-	)
-	if !tag_state.success {fmt.eprintln("[WARN] No tags found using default ", DEFAULT_TAG); tag = DEFAULT_TAG}
-
-	hash_opt := fmt.aprintf("-define:COMMIT_HASH=%s", strings.trim_right(commit_hash, "\n"))
-	tag_opt := fmt.aprintf("-define:TAG=%s", strings.trim_right(tag, "\n"))
-
-	build_args := [dynamic]string{"odin", "build", WORK_DIR, hash_opt, tag_opt}
+	build_args := [dynamic]string{"odin", "build", WORK_DIR}
 	for default_arg in DEFAULT_BUILD_ARGS {append(&build_args, default_arg)}
 	if show_timings {append(&build_args, "-show-timings")}
-	if release_mode {append(&build_args, "-o:speed")}
+
+	if release_mode {
+		append(&build_args, fmt.aprintf("-define:VERSION=%s-debug", version), "-o:speed")
+	} else {
+		append(&build_args, fmt.aprintf("-define:VERSION=%s", version))
+	}
 
 	build_state, _, build_err := run_command(Command{args = build_args[:]})
 	if !build_state.success {fatal(build_err)}
@@ -95,7 +86,7 @@ run_command :: proc(
 		command     = cmd.args,
 	}
 
-	fmt.printfln("[INFO] CMD: %s", strings.join(cmd.args, " "))
+	if !cmd.silent {fmt.printfln("[INFO] CMD: %s", strings.join(cmd.args, " "))}
 	process_state, stdout, stderr, process_err := os2.process_exec(process_desc, context.allocator)
 	if process_err != nil {
 		return os2.Process_State{success = false}, "", os2.error_string(process_err)
@@ -111,11 +102,12 @@ run_command :: proc(
 
 
 rebuild :: proc() {
-	bin_modified_time, bin_mtime_err := os2.last_write_time_by_name(os.args[0])
+	current_bin := os.args[0]
+	bin_modified_time, bin_mtime_err := os2.last_write_time_by_name(current_bin)
 	if bin_mtime_err != nil {
 		fatal(os2.error_string(bin_mtime_err))
 	}
-	bin_src_modified_time, bin_src_mtime_err := os2.last_write_time_by_name("./first/first.odin")
+	bin_src_modified_time, bin_src_mtime_err := os2.last_write_time_by_name("./first/main.odin")
 	if bin_src_mtime_err != nil {
 		fatal(os2.error_string(bin_src_mtime_err))
 	}
@@ -123,25 +115,25 @@ rebuild :: proc() {
 	diff := time.diff(bin_modified_time, bin_src_modified_time)
 	if diff < 0 {return}
 
-	old_bin := fmt.aprintf("%s.old", os.args[0])
-	rename_err := os2.rename(os.args[0], old_bin)
+	old_bin := fmt.aprintf("%s.old", current_bin)
+	rename_err := os2.rename(current_bin, old_bin)
 	if rename_err != nil {fatal("Failed to rename binary")}
-	fmt.println("[INFO] renamed first.bin -> first.bin.old")
+	fmt.printfln("[INFO] renamed %s -> %s", current_bin, old_bin)
 
 	rebuild_state, rebuild_out, rebuild_err := run_command(
 		Command {
-			args = []string{"odin", "build", "first", "-out:first.bin"},
+			args = []string{"odin", "build", "first", fmt.aprintf("-out:%s", current_bin)},
 			working_dir = WORK_DIR,
 		},
 	)
 	if !rebuild_state.success {
-		_ = os2.rename(old_bin, os.args[0])
-		fmt.eprintln("[ERROR] rebuild failed reverting first.bin.old -> first.bin")
+		_ = os2.rename(old_bin, current_bin)
+		fmt.eprintln("[ERROR] rebuild failed reverting ", old_bin, " -> ", current_bin)
 		fatal(rebuild_err)
 	}
 
 	// run ourself again as a subprocess
-	rerun_cmds := [dynamic]string{"first.bin"}
+	rerun_cmds := [dynamic]string{current_bin}
 	for old_arg in os.args[1:] {append(&rerun_cmds, old_arg)}
 	rerun_state, rerun_out, rerun_err := run_command(
 		Command{args = rerun_cmds[:], working_dir = WORK_DIR},
@@ -152,6 +144,31 @@ rebuild :: proc() {
 	os.exit(rerun_state.exit_code)
 }
 
+get_version :: proc() -> string {
+	DEFAULT_TAG :: "v0.0.0-1"
+
+	commit_state, commit_out, c_err_msg := run_command(
+		Command {
+			args = []string{"git", "rev-parse", "--short=10", "HEAD"},
+			working_dir = WORK_DIR,
+			silent = true,
+		},
+	)
+	if !commit_state.success {fatal(c_err_msg)}
+	commit_hash := strings.trim_right(commit_out, "\n")
+
+	tag_state, tag_out, t_err_msg := run_command(
+		Command {
+			args = []string{"git", "describe", "--tags", "--abbrev=0"},
+			working_dir = WORK_DIR,
+			silent = true,
+		},
+	)
+	tag := strings.trim_right(tag_out, "\n")
+	if !tag_state.success {fmt.eprintln("[WARN] No tags found, using default tag"); tag = DEFAULT_TAG}
+
+	return fmt.aprintf("%s-%s", tag, commit_hash)
+}
 
 fatal :: proc(message: string) {
 	fmt.eprintln(message)
