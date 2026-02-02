@@ -13,6 +13,7 @@ Command :: struct {
 	silent:      bool,
 }
 
+BIN_SRC :: "first/main.odin"
 WORK_DIR :: "."
 DEFAULT_BUILD_ARGS := []string{"-vet", "-vet-style", "-warnings-as-errors"}
 
@@ -72,7 +73,6 @@ main :: proc() {
 
 }
 
-
 run_command :: proc(
 	cmd: Command,
 ) -> (
@@ -80,7 +80,6 @@ run_command :: proc(
 	contents: string,
 	err_msg: string,
 ) {
-
 	process_desc: os2.Process_Desc = {
 		working_dir = cmd.working_dir,
 		command     = cmd.args,
@@ -100,14 +99,13 @@ run_command :: proc(
 	return process_state, strings.clone(cast(string)stdout), strings.clone(cast(string)stderr)
 }
 
-
 rebuild :: proc() {
 	current_bin := os.args[0]
 	bin_modified_time, bin_mtime_err := os2.last_write_time_by_name(current_bin)
 	if bin_mtime_err != nil {
 		fatal(os2.error_string(bin_mtime_err))
 	}
-	bin_src_modified_time, bin_src_mtime_err := os2.last_write_time_by_name("./first/main.odin")
+	bin_src_modified_time, bin_src_mtime_err := os2.last_write_time_by_name(BIN_SRC)
 	if bin_src_mtime_err != nil {
 		fatal(os2.error_string(bin_src_mtime_err))
 	}
