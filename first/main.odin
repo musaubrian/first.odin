@@ -3,7 +3,6 @@ package first
 
 import "core:fmt"
 import "core:os"
-import "core:os/os2"
 import "core:strings"
 import "core:time"
 
@@ -76,19 +75,19 @@ main :: proc() {
 run_command :: proc(
 	cmd: Command,
 ) -> (
-	state: os2.Process_State,
+	state: os.Process_State,
 	contents: string,
 	err_msg: string,
 ) {
-	process_desc: os2.Process_Desc = {
+	process_desc: os.Process_Desc = {
 		working_dir = cmd.working_dir,
 		command     = cmd.args,
 	}
 
 	if !cmd.silent {fmt.printfln("[INFO] CMD: %s", strings.join(cmd.args, " "))}
-	process_state, stdout, stderr, process_err := os2.process_exec(process_desc, context.allocator)
+	process_state, stdout, stderr, process_err := os.process_exec(process_desc, context.allocator)
 	if process_err != nil {
-		return os2.Process_State{success = false}, "", os2.error_string(process_err)
+		return os.Process_State{success = false}, "", os.error_string(process_err)
 	}
 
 	defer {
@@ -101,20 +100,20 @@ run_command :: proc(
 
 rebuild :: proc() {
 	current_bin := os.args[0]
-	bin_modified_time, bin_mtime_err := os2.last_write_time_by_name(current_bin)
+	bin_modified_time, bin_mtime_err := os.last_write_time_by_name(current_bin)
 	if bin_mtime_err != nil {
-		fatal(os2.error_string(bin_mtime_err))
+		fatal(os.error_string(bin_mtime_err))
 	}
-	bin_src_modified_time, bin_src_mtime_err := os2.last_write_time_by_name(BIN_SRC)
+	bin_src_modified_time, bin_src_mtime_err := os.last_write_time_by_name(BIN_SRC)
 	if bin_src_mtime_err != nil {
-		fatal(os2.error_string(bin_src_mtime_err))
+		fatal(os.error_string(bin_src_mtime_err))
 	}
 
 	diff := time.diff(bin_modified_time, bin_src_modified_time)
 	if diff < 0 {return}
 
 	old_bin := fmt.aprintf("%s.old", current_bin)
-	rename_err := os2.rename(current_bin, old_bin)
+	rename_err := os.rename(current_bin, old_bin)
 	if rename_err != nil {fatal("Failed to rename binary")}
 	fmt.printfln("[INFO] renamed %s -> %s", current_bin, old_bin)
 
@@ -125,7 +124,7 @@ rebuild :: proc() {
 		},
 	)
 	if !rebuild_state.success {
-		_ = os2.rename(old_bin, current_bin)
+		_ = os.rename(old_bin, current_bin)
 		fmt.eprintln("[ERROR] rebuild failed reverting ", old_bin, " -> ", current_bin)
 		fatal(rebuild_err)
 	}
