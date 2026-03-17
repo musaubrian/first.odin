@@ -10,7 +10,7 @@ Since its just odin, it can take advantage of the entire language.
 
 ## Usage
 
-1. Copy `first/` into your project
+1. Copy `first/` into your project (preferebly at the root or not, its yours now)
 ```
 .
 ├── first
@@ -19,7 +19,7 @@ Since its just odin, it can take advantage of the entire language.
 ...
 ```
 
-2. Bootstrap it once
+2. Build it once
 ```sh
 odin build first/ -out:first.bin
 ```
@@ -29,12 +29,12 @@ odin build first/ -out:first.bin
 ./first.bin
 ```
 
-It will auto-rebuild itself if you change the source using  **Go Rebuild Urself™ Technology**
+It will rebuild itself if you change the source using  **Go Rebuild Urself™ Technology**
 \*borrowed from nob
 
 Example:
 
-[https://github.com/musaubrian/sprite-anim](https://github.com/musaubrian/sprite-anim)
+[https://github.com/musaubrian/smp](https://github.com/musaubrian/smp)
 
-[![Demo](./.media/first.odin.mp4)]
-<video src="./.media/first.odin.mp4" controls></video>
+[![Demo](./.media/first_demo.mp4)]
+<video src="./.media/first_demo.mp4" controls></video>
