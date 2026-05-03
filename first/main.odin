@@ -12,8 +12,9 @@ Command :: struct {
 	silent:      bool,
 }
 
-BIN_SRC :: "first/main.odin"
+BIN_SRC  :: "first/main.odin"
 WORK_DIR :: "."
+OUT_DIR  :: "./bin"
 DEFAULT_BUILD_ARGS := []string{"-vet", "-vet-style", "-warnings-as-errors"}
 
 usage :: proc() {
@@ -54,8 +55,10 @@ main :: proc() {
 		}
 	}
 
+	mkdir_err := os.mkdir(OUT_DIR)
+	if (mkdir_err != nil && mkdir_err != .Exist) { fatal(os.error_string(mkdir_err)) }
 
-	build_args := [dynamic]string{"odin", "build", WORK_DIR}
+	build_args := [dynamic]string{"odin", "build", fmt.tprintf("%s/%s", OUT_DIR, WORK_DIR)}
 	for default_arg in DEFAULT_BUILD_ARGS {append(&build_args, default_arg)}
 	if show_timings {append(&build_args, "-show-timings")}
 
@@ -116,7 +119,7 @@ rebuild :: proc() {
 
 	old_bin := fmt.aprintf("%s.old", current_bin)
 	rename_err := os.rename(current_bin, old_bin)
-	if rename_err != nil {fatal("Failed to rename binary")}
+	if rename_err != nil { fatal("Failed to rename binary") }
 	fmt.printfln("[INFO] renamed %s -> %s", current_bin, old_bin)
 
 	rebuild_state, rebuild_out, rebuild_err := run_command(
@@ -133,7 +136,7 @@ rebuild :: proc() {
 
 	// run ourself again as a subprocess
 	rerun_cmds := [dynamic]string{current_bin}
-	for old_arg in os.args[1:] {append(&rerun_cmds, old_arg)}
+	for old_arg in os.args[1:] { append(&rerun_cmds, old_arg) }
 	rerun_state, rerun_out, rerun_err := run_command(
 		Command{args = rerun_cmds[:], working_dir = WORK_DIR},
 	)
