@@ -12,9 +12,10 @@ Command :: struct {
 	silent:      bool,
 }
 
-BIN_SRC  :: "first/main.odin"
-WORK_DIR :: "."
-OUT_DIR  :: "./bin"
+BIN_SRC   :: "first/main.odin"
+WORK_DIR  :: "."
+BUILD_DIR :: "./build"
+BIN_NAME  :: "_bin_name"
 DEFAULT_BUILD_ARGS := []string{"-vet", "-vet-style", "-warnings-as-errors"}
 
 usage :: proc() {
@@ -55,12 +56,12 @@ main :: proc() {
 		}
 	}
 
-	mkdir_err := os.mkdir(OUT_DIR)
+	mkdir_err := os.mkdir(BUILD_DIR)
 	if (mkdir_err != nil && mkdir_err != .Exist) { fatal(os.error_string(mkdir_err)) }
 
-	build_args := [dynamic]string{"odin", "build", fmt.tprintf("%s/%s", OUT_DIR, WORK_DIR)}
-	for default_arg in DEFAULT_BUILD_ARGS {append(&build_args, default_arg)}
-	if show_timings {append(&build_args, "-show-timings")}
+	build_args := [dynamic]string{"odin", "build", WORK_DIR, fmt.tprintf("-out:%s/%s", BUILD_DIR, BIN_NAME)}
+	for default_arg in DEFAULT_BUILD_ARGS { append(&build_args, default_arg) }
+	if show_timings { append(&build_args, "-show-timings") }
 
 	if release_mode {
 		append(&build_args, fmt.aprintf("-define:VERSION=%s", version), "-o:speed")
@@ -69,10 +70,8 @@ main :: proc() {
 	}
 
 	build_state, _, build_err := run_command(Command{args = build_args[:]})
-	if !build_state.success {fatal(build_err)}
-	if build_err != "" {fmt.eprintln(build_err)}
-
-
+	if !build_state.success { fatal(build_err) }
+	if build_err != "" { fmt.eprintln(build_err) }
 }
 
 run_command :: proc(
