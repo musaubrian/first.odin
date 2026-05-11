@@ -102,6 +102,8 @@ run_command :: proc(
 
 rebuild :: proc() {
 	current_bin := os.args[0]
+	old_bin := fmt.aprintf("%s/%s.old", BUILD_DIR, os.base(current_bin))
+
 	if strings.has_suffix(current_bin, ".old") { fatal("Using the .old bin, You probably meant to use first.bin") }
 
 	bin_modified_time, bin_mtime_err := os.last_write_time_by_name(current_bin)
@@ -116,15 +118,14 @@ rebuild :: proc() {
 	diff := time.diff(bin_modified_time, bin_src_modified_time)
 	if diff < 0 { return }
 
-	old_bin := fmt.aprintf("%s.old", current_bin)
 	rename_err := os.rename(current_bin, old_bin)
 	if rename_err != nil { fatal("Failed to rename binary") }
 	fmt.printfln("[INFO] renamed %s -> %s", current_bin, old_bin)
 
 	rebuild_state, rebuild_out, rebuild_err := run_command(
 		Command {
-			args = []string{"odin", "build", "first", fmt.aprintf("-out:%s", current_bin)},
-			working_dir = WORK_DIR,
+			args = []string{"odin", "build", "first/", fmt.aprintf("-out:%s", current_bin)},
+			working_dir = ".",
 		},
 	)
 	if !rebuild_state.success {
@@ -146,7 +147,7 @@ rebuild :: proc() {
 }
 
 get_version :: proc() -> string {
-	DEFAULT_TAG :: "v0.0.0-1"
+	DEFAULT_TAG :: "v0.0.0"
 
 	commit_state, commit_out, c_err_msg := run_command(
 		Command {
