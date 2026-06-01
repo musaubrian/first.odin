@@ -1,12 +1,14 @@
 # first.odin
 
 Thin wrapper on top of odin's build system with inspiration taken from
-[nob.h](https://github.com/tsoding/nob.h) and jai's `first.jai`.
+[nob.h](https://github.com/tsoding/nob.h) and jai's `first.jai` \*in spirit.
 
 > I have never used jai, just from what I could piece from online
 
 This is more of a template for my usecase, meant to live with your codebase.
-Since its just odin, it can take advantage of the entire language.
+Since its just the language, it can take advantage of the entire language.
+
+> I have no idea how any of this will work on windows so, have that in mind
 
 ## Usage
 
@@ -20,13 +22,13 @@ Since its just odin, it can take advantage of the entire language.
 ```
 
 2. Build it once
-```sh
-odin build first/ -out:first.bin
+```console
+$ odin build first/ -out:first.bin
 ```
 
 3. From now on just run
-```sh
-./first.bin
+```console
+$ ./first.bin
 ```
 
 It will rebuild itself if you change the source using  **Go Rebuild Urself™ Technology**
