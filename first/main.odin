@@ -66,7 +66,7 @@ main :: proc() {
 	if release_mode {
 		append(&build_args, fmt.aprintf("-define:VERSION=%s", version), "-o:speed")
 	} else {
-		append(&build_args, fmt.aprintf("-define:VERSION=%s-debug", version))
+		append(&build_args, fmt.aprintf("-define:VERSION=%s-debug", version), "-debug")
 	}
 
 	build_state, _, build_err := run_command(Command{args = build_args[:]})
@@ -148,6 +148,7 @@ rebuild :: proc() {
 
 get_version :: proc() -> string {
 	DEFAULT_TAG :: "v0.0.0"
+	DEFAULT_HASH :: "d00000000"
 
 	commit_state, commit_out, c_err_msg := run_command(
 		Command {
@@ -156,8 +157,11 @@ get_version :: proc() -> string {
 			silent = true,
 		},
 	)
-	if !commit_state.success {fatal(c_err_msg)}
 	commit_hash := strings.trim_right(commit_out, "\n")
+	if !commit_state.success {
+		fmt.eprintln("[WARN] Failed to get hash, using default")
+		commit_hash = DEFAULT_HASH
+	}
 
 	tag_state, tag_out, t_err_msg := run_command(
 		Command {
@@ -167,9 +171,12 @@ get_version :: proc() -> string {
 		},
 	)
 	tag := strings.trim_right(tag_out, "\n")
-	if !tag_state.success {fmt.eprintln("[WARN] No tags found, using default tag"); tag = DEFAULT_TAG}
+	if !tag_state.success {
+		fmt.eprintln("[WARN] No tags found, using default tag")
+		tag = DEFAULT_TAG
+	}
 
-	return fmt.aprintf("%s-%s", tag, commit_hash)
+	return fmt.aprintf("%s:%s", tag, commit_hash)
 }
 
 fatal :: proc(message: string) {
